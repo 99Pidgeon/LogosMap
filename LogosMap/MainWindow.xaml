@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" x:Class="LogosMap.MainWindow"
-        Title="카르티스 로고스" Height="600" Width="800"
+        Title="로고스맵" Height="600" Width="800"
         KeyDown="Window_KeyDown"
         KeyUp="Window_KeyUp"
-        Focusable="True">
+        Focusable="True" x:Name="mainWindow">
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
             <!-- 툴바의 높이를 설정 -->
@@ -17,19 +17,20 @@
         </Grid.RowDefinitions>
 
         <Menu>
-            <MenuItem Header="_파일">
+            <MenuItem Header="_파일" HorizontalContentAlignment="Right">
                 <MenuItem Header="_새 마인드맵" Click="NewButton_Click"/>
                 <MenuItem Header="_저장" Click="SaveButton_Click"/>
+                <MenuItem Header="_다른 이름으로 저장" Click="SaveAsButton_Click"/>
                 <MenuItem Header="_불러오기" Click="LoadButton_Click"/>
             </MenuItem>
         </Menu>
 
-        <skia:SKElement x:Name="skCanvas" PaintSurface="SkCanvas_PaintSurface" 
+        <skia:SKGLElement x:Name="skCanvas" PaintSurface="SkCanvas_PaintSurface" 
                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown" 
                            MouseRightButtonDown="Canvas_MouseRightButtonDown"
                            MouseRightButtonUp="Canvas_MouseRightButtonUp"
                            MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseLeftButtonUp" 
-                           MouseWheel="Canvas_MouseWheel" IgnorePixelScaling="True" Grid.Row="1" />
+                           MouseWheel="Canvas_MouseWheel" Grid.Row="1" />
         <TextBox x:Name="EditorBox"
              Visibility="Collapsed"
              FontFamily="Gmarket Sans TTF Light"
