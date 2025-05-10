@@ -6,6 +6,7 @@
         Title="로고스맵" Height="600" Width="800"
         KeyDown="Window_KeyDown"
         KeyUp="Window_KeyUp"
+        Closing="Window_Closing"
         Focusable="True" x:Name="mainWindow">
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
@@ -25,12 +26,14 @@
             </MenuItem>
         </Menu>
 
+        <!-- ScaleX/Y 를 코드에서 바꿔 주면 자식 모두 같이 스케일 -->
         <skia:SKGLElement x:Name="skCanvas" PaintSurface="SkCanvas_PaintSurface" 
                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown" 
                            MouseRightButtonDown="Canvas_MouseRightButtonDown"
                            MouseRightButtonUp="Canvas_MouseRightButtonUp"
                            MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseLeftButtonUp" 
                            MouseWheel="Canvas_MouseWheel" Grid.Row="1" />
+
         <TextBox x:Name="EditorBox"
              Visibility="Collapsed"
              FontFamily="Gmarket Sans TTF Light"
@@ -39,6 +42,10 @@
              Background="Transparent"
              LostFocus="EditorBox_LostFocus"
              KeyDown="EditorBox_KeyDown"
-             TextChanged="EditorBox_TextChanged" Grid.Row="1" />
+             TextChanged="EditorBox_TextChanged" Grid.Row="1" RenderTransformOrigin="0.5,0.5">
+            <TextBox.LayoutTransform>
+                <ScaleTransform x:Name="TextBoxScale" ScaleX="1" ScaleY="1"/>
+            </TextBox.LayoutTransform>
+        </TextBox>
     </Grid>
 </Window>

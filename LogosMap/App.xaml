@@ -4,6 +4,8 @@
              xmlns:local="clr-namespace:LogosMap"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <FontFamily x:Key="GMARKET">
+            pack://application:,,,/LogosMap;component/Fonts/#GMARKETSANSTTFLIGHT_R
+        </FontFamily>
     </Application.Resources>
 </Application>

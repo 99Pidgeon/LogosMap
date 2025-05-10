@@ -1,0 +1,39 @@
+﻿<Window x:Class="LogosMap.SaveConfirmWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="종료 확인"
+        WindowStyle="SingleBorderWindow"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+
+    <Border Background="White"
+            CornerRadius="8"
+            Padding="10">
+        <StackPanel>
+            <TextBlock Text="저장되지 않은 변경 사항이 있습니다. 변경 내용을 저장하시겠습니까?"
+                       FontSize="12"
+                       Margin="0,0,0,6"/>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="저장"
+                        Width="75"
+                        Margin="5"
+                        Background="White"
+                        IsDefault="True"
+                        Click="OnYes"/>
+                <Button Content="저장 안함"
+                        Width="75"
+                        Margin="5"
+                        Background="White"
+                        Click="OnNo"/>
+                <Button Content="취소"
+                        Width="75"
+                        Margin="5"
+                        Background="White"
+                        IsCancel="True"
+                        Click="OnCancel"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

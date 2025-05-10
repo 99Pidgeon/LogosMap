@@ -1,6 +1,6 @@
 ﻿namespace LogosMap
 {
-    public class Node
+    public class Node : IEquatable<Node>
     {
         public int Id { get; set; }
         public string name = "노드";
@@ -22,6 +22,11 @@
         {
             x = targetX;
             y = targetY;
-        }        
+        }
+
+        public bool Equals(Node? other)
+        {
+            return other != null && Id == other.Id;
+        }
     }
 }
