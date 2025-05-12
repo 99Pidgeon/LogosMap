@@ -31,6 +31,8 @@
                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown" 
                            MouseRightButtonDown="Canvas_MouseRightButtonDown"
                            MouseRightButtonUp="Canvas_MouseRightButtonUp"
+                           MouseDown="Canvas_MouseMiddleButtonDown"
+                           MouseUp="Canvas_MouseMiddleButtonUp"
                            MouseMove="Canvas_MouseMove" MouseLeftButtonUp="Canvas_MouseLeftButtonUp" 
                            MouseWheel="Canvas_MouseWheel" Grid.Row="1" />
 
@@ -43,6 +45,9 @@
              LostFocus="EditorBox_LostFocus"
              KeyDown="EditorBox_KeyDown"
              TextChanged="EditorBox_TextChanged" Grid.Row="1" RenderTransformOrigin="0.5,0.5">
+            <TextBox.RenderTransform>
+                <TranslateTransform x:Name="EditorBoxTranslate" />
+            </TextBox.RenderTransform>
             <TextBox.LayoutTransform>
                 <ScaleTransform x:Name="TextBoxScale" ScaleX="1" ScaleY="1"/>
             </TextBox.LayoutTransform>

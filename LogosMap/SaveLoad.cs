@@ -7,7 +7,7 @@ namespace LogosMap
     {
         public static NodeData ConvertToData(Node node)
         {
-            List<ConnectionData> connections = new List<ConnectionData>();
+            List<ConnectionData> connections = [];
 
             for (int i = 0; i < node.connections.Count; i++)
             {
@@ -24,11 +24,11 @@ namespace LogosMap
             return new NodeData
             {
                 Id = node.Id,
-                x = node.x,
-                y = node.y,
-                name = node.name,
-                connections = connections,
-                startConnections = startConnections
+                X = node.x,
+                Y = node.y,
+                Name = node.name,
+                Connections = connections,
+                StartConnections = startConnections
             };
         }
 
@@ -37,9 +37,9 @@ namespace LogosMap
             return new Node
             {
                 Id = data.Id,
-                x = data.x,
-                y = data.y,
-                name = data.name,
+                x = data.X,
+                y = data.Y,
+                name = data.Name,
             };
         }
 
@@ -47,8 +47,8 @@ namespace LogosMap
         {
             return new ConnectionData
             {
-                startNodeId = connection.startNode.Id,
-                endNodeId = connection.endNode.Id
+                StartNodeId = connection.startNode.Id,
+                EndNodeId = connection.endNode.Id
             };
         }
 
@@ -88,17 +88,17 @@ namespace LogosMap
 
             for (int i = 0; i < dataList.Count; i++)
             {
-                foreach (var connection in dataList[i].connections)
+                foreach (var connection in dataList[i].Connections)
                 {
-                    MainWindow.nodes[i].connections.Add(new Connection(MainWindow.nodeIds[connection.startNodeId], MainWindow.nodeIds[connection.endNodeId]));
+                    MainWindow.nodes[i].connections.Add(new Connection(MainWindow.nodeIds[connection.StartNodeId], MainWindow.nodeIds[connection.EndNodeId]));
                 }
             }
 
             for (int i = 0; i < dataList.Count; i++)
             {
-                foreach (var connection in dataList[i].startConnections)
+                foreach (var connection in dataList[i].StartConnections)
                 {
-                    MainWindow.nodes[i].startConnections.Add(new Connection(MainWindow.nodeIds[connection.startNodeId], MainWindow.nodeIds[connection.endNodeId]));
+                    MainWindow.nodes[i].startConnections.Add(new Connection(MainWindow.nodeIds[connection.StartNodeId], MainWindow.nodeIds[connection.EndNodeId]));
                 }
             }
 
@@ -108,8 +108,6 @@ namespace LogosMap
             {
                 return;
             }
-
-            MainWindow.Instance.skCanvas.InvalidateVisual(); // 다시 그리기
         }
     }
 }

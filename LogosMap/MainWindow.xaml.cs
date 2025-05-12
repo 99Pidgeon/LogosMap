@@ -1,12 +1,15 @@
 ﻿using Microsoft.Win32;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
+using SkiaSharp.Views.WPF;
 using System.ComponentModel;
+using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace LogosMap
 {
@@ -19,10 +22,10 @@ namespace LogosMap
 
         public List<Node> selectedNodes = [];
 
-        public Node? selectedNode;
+        public Node? movingNode;
 
         public static List<Node> nodes = [];
-        public static Dictionary<int, Node> nodeIds = new();
+        public static Dictionary<int, Node> nodeIds = [];
 
         private SKPoint clickPosition;
         private SKPoint startDragPosition;
@@ -33,6 +36,8 @@ namespace LogosMap
 
         private readonly SKPaint FillPaint;
         private readonly SKPaint StrokePaint;
+        private readonly SKPaint EditorPaint;
+        private readonly SKPaint SelectedPaint;
 
         public string FileName = "새 마인드맵";
         public string FileDirectory = "";
@@ -40,6 +45,7 @@ namespace LogosMap
         private readonly SKFont font = new();
 
         private SKRect bounds;
+        private SKRect selectionBox = new();
 
         private float targetScale = 1f;
         private const float lerpSpeed = 0.05f;
@@ -68,6 +74,22 @@ namespace LogosMap
             {
                 Color = SKColor.Parse("#4FFFFFFF"),
                 StrokeWidth = 0.6f,
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true
+            };
+
+            EditorPaint = new SKPaint
+            {
+                Color = SKColor.FromHsl(255, 255, 255),
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true
+            };
+
+            SelectedPaint = new SKPaint
+            {
+                Color = SKColors.DarkOrange,
+                StrokeWidth = 2,
+                Style = SKPaintStyle.Stroke,
                 IsAntialias = true
             };
 
@@ -91,7 +113,8 @@ namespace LogosMap
 
                 TextBoxScale.ScaleX = scale * 0.8f;
                 TextBoxScale.ScaleY = scale * 0.8f;
-                EditorBox.RenderTransform = new TranslateTransform(ScreenPos.X - (skCanvas.ActualWidth / 2 - 0), ScreenPos.Y - (skCanvas.ActualHeight / 2 - 16 * scale));
+                EditorBoxTranslate.X = ScreenPos.X - (skCanvas.ActualWidth / 2 - 0);
+                EditorBoxTranslate.Y = ScreenPos.Y - (skCanvas.ActualHeight / 2 - 16 * scale);
             }
 
             skCanvas.InvalidateVisual();
@@ -131,8 +154,18 @@ namespace LogosMap
 
                 if (!bounds.IntersectsWith(nodeRect)) continue;
 
+
                 canvas.DrawCircle(node.x, node.y, 6f, FillPaint);
+                if (selectedNodes.Contains(node) || selectionBoxNodes.Contains(node))
+                {
+                    canvas.DrawCircle(node.x, node.y, 6.2f, SelectedPaint);
+                }
                 canvas.DrawText(node.name, new SKPoint(node.x, node.y + 20), SKTextAlign.Center, font, FillPaint);
+            }
+
+            if (MathF.Abs(selectionBox.Width) > 0.1f || MathF.Abs(selectionBox.Height) > 0.1f)
+            {
+                canvas.DrawRect(selectionBox.Left, selectionBox.Top, selectionBox.Width, selectionBox.Height, StrokePaint);
             }
 
             canvas.GetLocalClipBounds(out bounds);
@@ -142,6 +175,10 @@ namespace LogosMap
 
         #region Mouse Events
 
+        private List<Node> selectionBoxNodes = [];
+
+        private SKPoint leftClickPos;
+
         private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var position = GetPosition(e.GetPosition(this));
@@ -150,60 +187,81 @@ namespace LogosMap
 
             var clickedText = GetTextAtPosition(position);
 
-            if (clickedText != null)
+            if (clickedText != null)//If clicked on node text
             {
-                editingNode = clickedText;
-                EditorBox.Text = clickedText.name;
-                clickedText.name = "";
-
-                skCanvas.InvalidateVisual();
-
-                EditorBox.BorderThickness = new Thickness(0);
-                EditorBox.TextAlignment = TextAlignment.Center;
-                EditorBox.Visibility = Visibility.Visible;
-                var paint = new SKPaint
-                {
-                    Color = SKColor.FromHsl(255, 255, 255),
-                    Style = SKPaintStyle.Fill,
-                    IsAntialias = true
-                };
-                EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, paint) + 10);
-                EditorBox.Height = 20;
-
-                EditorBox.Focus();
-                EditorBox.SelectAll();
+                selectedNodes.Clear();
+                selectedNodes.Add(clickedText);
+                ShowEditorBox(clickedText);
             }
-            else if (clickedNode != null)
+            else if (clickedNode != null)//If clicked on node
             {
-                selectedNode = clickedNode;
+                movingNode = clickedNode;
+
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+                {
+                    if (!selectedNodes.Contains(clickedNode))
+                    {
+                        selectedNodes.Clear();
+                        selectedNodes.Add(clickedNode);
+                    }
+                }
+                else
+                {
+                    if (!selectedNodes.Remove(clickedNode))
+                    {
+                        selectedNodes.Add(clickedNode);
+                    }
+                }
 
                 isEdited = true;
                 mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
 
                 EndEditing();
             }
-            else
+            else//If clicked on nothing
             {
-                startDragPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y - 18);
-                skCanvas.CaptureMouse();
+                if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+                {
+                    selectedNodes.Clear();
+                }
+                selectionBoxNodes.Clear();
+                selectionBox.Top = position.Y; 
+                selectionBox.Left = position.X;
+                selectionBox.Bottom = position.Y;
+                selectionBox.Right = position.X;
                 EndEditing();
-                isPanning = true;
             }
 
+            leftClickPos = position;
             clickPosition = position;
         }
 
         private void Canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (isPanning)
-            {
-                skCanvas.ReleaseMouseCapture();
-                isPanning = false;
+            var position = GetPosition(e.GetPosition(this));
 
-            }
-            if (selectedNode != null)
+            foreach (Node node in selectionBoxNodes)
             {
-                selectedNode = null;
+                if (!selectedNodes.Contains(node))
+                {
+                    selectedNodes.Add(node);
+                }
+            }
+            selectionBoxNodes.Clear();
+            if (SKPoint.Distance(position, leftClickPos) < 0.1f)
+            {
+                selectedNodes.Clear();
+                if (movingNode != null)
+                {
+                    selectedNodes.Add(movingNode);
+                }
+            }
+            selectionBox.Right = selectionBox.Left;
+            selectionBox.Bottom = selectionBox.Top;
+
+            if (movingNode != null)
+            {
+                movingNode = null;
             }
         }
 
@@ -221,8 +279,10 @@ namespace LogosMap
                 }
                 else
                 {
-                    selectedNode = AddNewNode(position);
-                    ConnectNodes(clickedNode, selectedNode);
+                    movingNode = AddNewNode(position);
+                    selectedNodes.Clear();
+                    selectedNodes.Add(movingNode);
+                    ConnectNodes(clickedNode, movingNode);
                 }
                 isEdited = true;
                 mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
@@ -235,7 +295,6 @@ namespace LogosMap
                 addNode.Click += (s, args) =>
                 {
                     AddNewNode(position);
-                    skCanvas.InvalidateVisual();
                 };
 
                 menu.Items.Add(addNode);
@@ -247,30 +306,11 @@ namespace LogosMap
 
         private void Canvas_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (selectedNode != null)
+            if (movingNode != null)
             {
-                editingNode = selectedNode;
-                EditorBox.Text = selectedNode.name;
-                selectedNode.name = "";
+                ShowEditorBox(movingNode);
 
-                skCanvas.InvalidateVisual();
-
-                EditorBox.BorderThickness = new Thickness(0);
-                EditorBox.TextAlignment = TextAlignment.Center;
-                EditorBox.Visibility = Visibility.Visible;
-                var paint = new SKPaint
-                {
-                    Color = SKColor.FromHsl(255, 255, 255),
-                    Style = SKPaintStyle.Fill,
-                    IsAntialias = true
-                };
-                EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, paint) + 10);
-                EditorBox.Height = 20;
-
-                EditorBox.Focus();
-                EditorBox.SelectAll();
-
-                selectedNode = null;
+                movingNode = null;
             }
         }
 
@@ -278,15 +318,18 @@ namespace LogosMap
         {
             var position = GetPosition(e.GetPosition(this));
 
-            if (selectedNode != null)
+            if (movingNode != null)
             {
                 var offset = position - clickPosition;
 
-                selectedNode.Move(selectedNode.x + offset.X, selectedNode.y + offset.Y);
+                foreach(Node node in selectedNodes)
+                {
+                    node.Move(node.x + offset.X, node.y + offset.Y);
+                }
             }
             else
             {
-                if (e.LeftButton == MouseButtonState.Pressed && isPanning)
+                if (e.MiddleButton == MouseButtonState.Pressed && isPanning)
                 {
                     var currentPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y - 18);
                     var delta = currentPosition - startDragPosition;
@@ -294,10 +337,48 @@ namespace LogosMap
                     translate.Y += delta.Y;
                     startDragPosition = currentPosition;
                 }
+                if (e.LeftButton == MouseButtonState.Pressed)
+                {
+                    selectionBox.Bottom = position.Y;
+                    selectionBox.Right = position.X;
+
+                    foreach (Node node in nodes)
+                    {
+                        if (IsNodeInSelectionBox(node))
+                        {
+                            if (!selectionBoxNodes.Contains(node))
+                            {
+                                selectionBoxNodes.Add(node);
+                            }
+                        }
+                        else selectionBoxNodes.Remove(node);
+                    }
+                }
             }
 
-            skCanvas.InvalidateVisual();
             clickPosition = position;
+        }
+
+        private void Canvas_MouseMiddleButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                startDragPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y - 18);
+                skCanvas.CaptureMouse();
+                isPanning = true;
+            }
+        }
+
+        private void Canvas_MouseMiddleButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Middle)
+            {
+                if (isPanning)
+                {
+                    skCanvas.ReleaseMouseCapture();
+                    isPanning = false;
+                }
+            }
         }
 
         private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -311,7 +392,6 @@ namespace LogosMap
                 targetScale /= 1.1f;
             }
 
-            skCanvas.InvalidateVisual();
         }
 
         #endregion
@@ -371,6 +451,16 @@ namespace LogosMap
 
                     SaveLoad.SaveMindMap(filePath);
                 }
+            }
+
+            if (e.Key == Key.Delete)
+            {
+                foreach(Node node in selectedNodes)
+                {
+                    DeleteNode(node);
+                }
+                isEdited = true;
+                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
             }
         }
 
@@ -463,10 +553,28 @@ namespace LogosMap
                 FileDirectory = filePath;
                 isEdited = false;
                 mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                selectedNodes.Clear();
                 SaveLoad.LoadMindMap(filePath);
             }
 
             translate = new SKPoint(0, 0);
+        }
+
+        private void OpenNodeMenu(Node node)
+        {
+            var menu = new ContextMenu();
+
+            var addNode = new MenuItem { Header = "노드 삭제" };
+            addNode.Click += (s, args) =>
+            {
+                DeleteNode(node);
+                isEdited = true;
+                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+            };
+
+            menu.Items.Add(addNode);
+
+            menu.IsOpen = true;
         }
 
         private void Window_Closing(object? sender, CancelEventArgs e)
@@ -530,13 +638,7 @@ namespace LogosMap
         #region Editor Box Events
         private void EditorBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var paint = new SKPaint
-            {
-                Color = SKColor.FromHsl(255, 255, 255),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true
-            };
-            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, paint) + 10);
+            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, EditorPaint) + 10);
         }
 
         private void EndEditing()
@@ -545,7 +647,6 @@ namespace LogosMap
             {
                 editingNode.name = EditorBox.Text != "" ? EditorBox.Text : "노드";
                 EditorBox.Visibility = Visibility.Collapsed;
-                skCanvas.InvalidateVisual();
 
                 isEdited = true;
                 mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
@@ -563,25 +664,23 @@ namespace LogosMap
                 EndEditing();
             }
         }
-        #endregion
 
-        private void OpenNodeMenu(Node node)
+        private void ShowEditorBox(Node parentNode)
         {
-            var menu = new ContextMenu();
+            editingNode = parentNode;
+            EditorBox.Text = parentNode.name;
+            parentNode.name = "";
 
-            var addNode = new MenuItem { Header = "노드 삭제" };
-            addNode.Click += (s, args) =>
-            {
-                DeleteNode(node);
-                skCanvas.InvalidateVisual();
-                isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
-            };
+            EditorBox.BorderThickness = new Thickness(0);
+            EditorBox.TextAlignment = TextAlignment.Center;
+            EditorBox.Visibility = Visibility.Visible;
+            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, EditorPaint) + 10);
+            EditorBox.Height = 20;
 
-            menu.Items.Add(addNode);
-
-            menu.IsOpen = true;
+            EditorBox.Focus();
+            EditorBox.SelectAll();
         }
+        #endregion
 
         private Node? GetTextAtPosition(SKPoint position)
         {
@@ -617,8 +716,6 @@ namespace LogosMap
 
             node2.connections.Add(connection);
             node1.startConnections.Add(connection);
-
-            skCanvas.InvalidateVisual();
         }
 
         private Node AddNewNode(SKPoint position)
@@ -629,8 +726,6 @@ namespace LogosMap
 
             nodes.Add(node);
 
-            skCanvas.InvalidateVisual();
-
             lastId++;
 
             return node;
@@ -639,7 +734,7 @@ namespace LogosMap
         private void DeleteNode(Node node)
         {
             editingNode = null;
-            selectedNode = null;
+            movingNode = null;
 
             foreach(var connection in node.startConnections)
             {
@@ -673,6 +768,50 @@ namespace LogosMap
             double YPos = (float)skCanvas.ActualHeight * yMultiplier;
 
             return new Point(XPos, YPos);
+        }
+
+        private bool IsNodeInSelectionBox(Node node)
+        {
+            bool flag1 = false;
+            bool flag2 = false;
+
+            if (selectionBox.Left > selectionBox.Right)
+            {
+                flag1 = true;
+            }
+            if (selectionBox.Top > selectionBox.Bottom)
+            {
+                flag2 = true;
+            }
+
+            if(!flag1 && !flag2)
+            {
+                return (node.x >= selectionBox.Left)
+                && (node.x < selectionBox.Right)
+                && (node.y >= selectionBox.Top)
+                && (node.y < selectionBox.Bottom);
+            }
+            else if(!flag1 && flag2)
+            {
+                return (node.x >= selectionBox.Left)
+                && (node.x < selectionBox.Right)
+                && (node.y < selectionBox.Top)
+                && (node.y >= selectionBox.Bottom);
+            }
+            else if(flag1 && !flag2)
+            {
+                return (node.x < selectionBox.Left)
+                && (node.x >= selectionBox.Right)
+                && (node.y >= selectionBox.Top)
+                && (node.y < selectionBox.Bottom);
+            }
+            else
+            {
+                return (node.x < selectionBox.Left)
+                && (node.x >= selectionBox.Right)
+                && (node.y < selectionBox.Top)
+                && (node.y >= selectionBox.Bottom);
+            }
         }
     }
 }
