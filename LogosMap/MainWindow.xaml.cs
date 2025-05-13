@@ -331,10 +331,10 @@ namespace LogosMap
             {
                 if (e.MiddleButton == MouseButtonState.Pressed && isPanning)
                 {
-                    var currentPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y - 18);
+                    var currentPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y);
                     var delta = currentPosition - startDragPosition;
-                    translate.X += delta.X;
-                    translate.Y += delta.Y;
+                    translate.X += delta.X * 1 / scale;
+                    translate.Y += delta.Y * 1 / scale;
                     startDragPosition = currentPosition;
                 }
                 if (e.LeftButton == MouseButtonState.Pressed)
@@ -363,7 +363,7 @@ namespace LogosMap
         {
             if (e.ChangedButton == MouseButton.Middle)
             {
-                startDragPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y - 18);
+                startDragPosition = new SKPoint((float)e.GetPosition(this).X, (float)e.GetPosition(this).Y);
                 skCanvas.CaptureMouse();
                 isPanning = true;
             }
