@@ -191,6 +191,7 @@ namespace LogosMap
             {
                 selectedNodes.Clear();
                 selectedNodes.Add(clickedText);
+                EndEditing();
                 ShowEditorBox(clickedText);
             }
             else if (clickedNode != null)//If clicked on node
@@ -220,6 +221,7 @@ namespace LogosMap
             }
             else//If clicked on nothing
             {
+                skCanvas.CaptureMouse();
                 if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
                 {
                     selectedNodes.Clear();
@@ -248,14 +250,21 @@ namespace LogosMap
                 }
             }
             selectionBoxNodes.Clear();
-            if (SKPoint.Distance(position, leftClickPos) < 0.1f)
+
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
             {
-                selectedNodes.Clear();
-                if (movingNode != null)
+                if (SKPoint.Distance(position, leftClickPos) < 0.1f)
                 {
-                    selectedNodes.Add(movingNode);
+                    selectedNodes.Clear();
+                    if (movingNode != null)
+                    {
+                        selectedNodes.Add(movingNode);
+                    }
                 }
             }
+
+            skCanvas.ReleaseMouseCapture();
+
             selectionBox.Right = selectionBox.Left;
             selectionBox.Bottom = selectionBox.Top;
 
@@ -686,7 +695,7 @@ namespace LogosMap
         {
             foreach (Node node in nodes)
             {
-                var nodeBounds = new SKRect(node.x - font.MeasureText(node.name) / 2, node.y + 10, node.x + font.MeasureText(node.name) / 2, node.y + 25);
+                var nodeBounds = new SKRect(node.x - MathF.Max(50, font.MeasureText(node.name)) / 2, node.y + 10, node.x + MathF.Max(50, font.MeasureText(node.name)) / 2, node.y + 25);
 
                 if (nodeBounds.Contains(position))
                 {

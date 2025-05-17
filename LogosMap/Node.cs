@@ -28,5 +28,17 @@
         {
             return other != null && Id == other.Id;
         }
+
+        public List<Node> GetChildren()
+        {
+            List<Node> output = [];
+
+            foreach (Connection connection in startConnections)
+            {
+                output.Add(connection.endNode);
+            }
+
+            return output;
+        }
     }
 }
