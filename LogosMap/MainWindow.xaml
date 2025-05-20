@@ -3,30 +3,26 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:av="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="av" x:Class="LogosMap.MainWindow"
-        Title="로고스맵" Height="600" Width="800"
+        Title="Strings" Height="600" Width="800"
         KeyDown="Window_KeyDown"
         KeyUp="Window_KeyUp"
         Closing="Window_Closing"
         Focusable="True" x:Name="mainWindow">
     <Grid x:Name="MainGrid">
         <Grid.RowDefinitions>
-            <!-- 툴바의 높이를 설정 -->
             <RowDefinition Height="Auto" />
-            <!-- 툴바의 높이 -->
             <RowDefinition Height="*" />
-            <!-- Canvas의 크기 -->
         </Grid.RowDefinitions>
 
         <Menu>
-            <MenuItem Header="_파일" HorizontalContentAlignment="Right">
-                <MenuItem Header="_새 마인드맵" Click="NewButton_Click"/>
-                <MenuItem Header="_저장" Click="SaveButton_Click"/>
-                <MenuItem Header="_다른 이름으로 저장" Click="SaveAsButton_Click"/>
-                <MenuItem Header="_불러오기" Click="LoadButton_Click"/>
+            <MenuItem x:Name="FileMenu" Header="_파일" HorizontalContentAlignment="Right">
+                <MenuItem x:Name="NewMenu" Header="_새 마인드맵" Click="NewButton_Click"/>
+                <MenuItem x:Name="SaveMenu" Header="_저장" Click="SaveButton_Click"/>
+                <MenuItem x:Name="SaveAsMenu" Header="_다른 이름으로 저장" Click="SaveAsButton_Click"/>
+                <MenuItem x:Name="LoadMenu" Header="_불러오기" Click="LoadButton_Click"/>
             </MenuItem>
         </Menu>
 
-        <!-- ScaleX/Y 를 코드에서 바꿔 주면 자식 모두 같이 스케일 -->
         <skia:SKGLElement x:Name="skCanvas" PaintSurface="SkCanvas_PaintSurface" 
                            MouseLeftButtonDown="Canvas_MouseLeftButtonDown" 
                            MouseRightButtonDown="Canvas_MouseRightButtonDown"

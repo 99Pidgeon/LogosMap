@@ -2,6 +2,7 @@
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -35,7 +36,7 @@ namespace LogosMap
         private readonly SKPaint EditorPaint;
         private readonly SKPaint SelectedPaint;
 
-        public string FileName = "새 마인드맵";
+        public string FileName = Strings.NewFile;
         public string FileDirectory = "";
 
         private readonly SKFont font = new();
@@ -56,9 +57,17 @@ namespace LogosMap
         {
             InitializeComponent();
 
+            FileName = Strings.NewFile;
+            mainWindow.Title = Strings.LogosMap;
+            FileMenu.Header = "_" + Strings.File;
+            NewMenu.Header = "_" + Strings.NewFile;
+            SaveMenu.Header = "_" + Strings.Save;
+            SaveAsMenu.Header = "_" + Strings.SaveAs;
+            LoadMenu.Header = "_" + Strings.Load;
+
             Instance = this;
 
-            mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+            mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
             font.Typeface = Util.GetTypeface("GMARKETSANSTTFLIGHT.TTF");
 
             FillPaint = new SKPaint
@@ -218,7 +227,7 @@ namespace LogosMap
                 }
 
                 isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                 EndEditing();
             }
@@ -304,13 +313,13 @@ namespace LogosMap
                     prevNode = clickedNode;
                 }
                 isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
             }
             else
             {
                 var menu = new ContextMenu();
 
-                var addNode = new MenuItem { Header = "노드 추가" };
+                var addNode = new MenuItem { Header = "_" + Strings.AddNode };
                 addNode.Click += (s, args) =>
                 {
                     AddNewNode(position);
@@ -453,9 +462,9 @@ namespace LogosMap
                 {
                     var saveFileDialog = new SaveFileDialog
                     {
-                        Title = "저장...",
-                        Filter = "JSON 파일 (*.json)|*.json",
-                        FileName = "새 마인드맵.json"
+                        Title = Strings.Save + "...",
+                        Filter = Strings.JsonFile + " (*.json)|*.json",
+                        FileName = Strings.NewFile + ".json"
                     };
 
                     if (saveFileDialog.ShowDialog() == true)
@@ -465,7 +474,7 @@ namespace LogosMap
                         FileDirectory = filePath;
 
                         isEdited = false;
-                        mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                        mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                         SaveLoad.SaveMindMap(filePath);
                     }
@@ -473,7 +482,7 @@ namespace LogosMap
                 else
                 {
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                     SaveLoad.SaveMindMap(FileDirectory);
                 }
@@ -483,8 +492,8 @@ namespace LogosMap
             {
                 var saveFileDialog = new SaveFileDialog
                 {
-                    Title = "다른 이름으로 저장...",
-                    Filter = "JSON 파일 (*.json)|*.json",
+                    Title = Strings.SaveAs + "...",
+                    Filter = Strings.JsonFile + " (*.json)|*.json",
                     FileName = FileName
                 };
 
@@ -495,7 +504,7 @@ namespace LogosMap
                     FileDirectory = filePath;
 
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                     SaveLoad.SaveMindMap(filePath);
                 }
@@ -508,7 +517,7 @@ namespace LogosMap
                     DeleteNode(node);
                 }
                 isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
             }
         }
 
@@ -526,7 +535,7 @@ namespace LogosMap
             lastId = 0;
 
             FileDirectory = "";
-            FileName = "새 마인드맵";
+            FileName = Strings.NewFile;
             isEdited = false;
 
             AddNewNode(new SKPoint(400, 250));
@@ -538,8 +547,8 @@ namespace LogosMap
         {
             var saveFileDialog = new SaveFileDialog
             {
-                Title = "다른 이름으로 저장...",
-                Filter = "JSON 파일 (*.json)|*.json",
+                Title = Strings.SaveAs + "...",
+                Filter = Strings.JsonFile + " (*.json)|*.json",
                 FileName = FileName
             };
 
@@ -549,7 +558,7 @@ namespace LogosMap
                 FileName = saveFileDialog.SafeFileName;
                 FileDirectory = filePath;
                 isEdited = false;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
                 SaveLoad.SaveMindMap(filePath);
             }
         }
@@ -560,9 +569,9 @@ namespace LogosMap
             {
                 var saveFileDialog = new SaveFileDialog
                 {
-                    Title = "저장...",
-                    Filter = "JSON 파일 (*.json)|*.json",
-                    FileName = "새 마인드맵.json"
+                    Title = Strings.Save + "...",
+                    Filter = Strings.JsonFile + " (*.json)|*.json",
+                    FileName = Strings.NewFile + ".json"
                 };
 
                 if (saveFileDialog.ShowDialog() == true)
@@ -572,7 +581,7 @@ namespace LogosMap
                     FileDirectory = filePath;
 
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                     SaveLoad.SaveMindMap(filePath);
                 }
@@ -580,7 +589,7 @@ namespace LogosMap
             else
             {
                 isEdited = false;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                 SaveLoad.SaveMindMap(FileDirectory);
             }
@@ -590,8 +599,8 @@ namespace LogosMap
         {
             var openFileDialog = new OpenFileDialog
             {
-                Title = "불러오기...",
-                Filter = "JSON 파일 (*.json)|*.json"
+                Title = Strings.Load + "...",
+                Filter = Strings.JsonFile + " (*.json)|*.json"
             };
 
             if (openFileDialog.ShowDialog() == true)
@@ -600,7 +609,7 @@ namespace LogosMap
                 FileName = openFileDialog.SafeFileName;
                 FileDirectory = filePath;
                 isEdited = false;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
                 selectedNodes.Clear();
                 SaveLoad.LoadMindMap(filePath);
             }
@@ -612,12 +621,12 @@ namespace LogosMap
         {
             var menu = new ContextMenu();
 
-            var addNode = new MenuItem { Header = "노드 삭제" };
+            var addNode = new MenuItem { Header = "_" + Strings.DeleteNode };
             addNode.Click += (s, args) =>
             {
                 DeleteNode(node);
                 isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
             };
 
             menu.Items.Add(addNode);
@@ -644,9 +653,9 @@ namespace LogosMap
                             {
                                 var saveFileDialog = new SaveFileDialog
                                 {
-                                    Title = "저장...",
+                                    Title = Strings.Save + "...",
                                     Filter = "JSON 파일 (*.json)|*.json",
-                                    FileName = "새 마인드맵.json"
+                                    FileName = Strings.NewFile + ".json"
                                 };
 
                                 if (saveFileDialog.ShowDialog() == true)
@@ -656,7 +665,7 @@ namespace LogosMap
                                     FileDirectory = filePath;
 
                                     isEdited = false;
-                                    mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                                     SaveLoad.SaveMindMap(filePath);
                                 }
@@ -664,7 +673,7 @@ namespace LogosMap
                             else
                             {
                                 isEdited = false;
-                                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                                 SaveLoad.SaveMindMap(FileDirectory);
                             }
@@ -695,7 +704,7 @@ namespace LogosMap
                 EditorBox.Visibility = Visibility.Collapsed;
 
                 isEdited = true;
-                mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
+                mainWindow.Title = !isEdited ? Strings.LogosMap + "  - " + FileName : Strings.LogosMap + " - " + FileName + "*";
 
                 editingNode = null;
             }

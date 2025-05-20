@@ -3,7 +3,7 @@
     public class Node : IEquatable<Node>
     {
         public int Id { get; set; }
-        public string name = "노드";
+        public string name = Strings.Node;
         public List<Connection> connections = [];
         public List<Connection> startConnections = [];
         public float x;
