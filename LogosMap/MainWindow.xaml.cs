@@ -1,15 +1,11 @@
 ﻿using Microsoft.Win32;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
-using SkiaSharp.Views.WPF;
 using System.ComponentModel;
-using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Media3D;
 
 namespace LogosMap
 {
@@ -53,6 +49,8 @@ namespace LogosMap
         public static int lastId;
 
         private Node? editingNode = null;
+
+        private SKPoint lineEnd;
 
         public MainWindow()
         {
@@ -126,7 +124,6 @@ namespace LogosMap
 
             canvas.Clear(SKColor.Parse("#20252B"));
 
-            // 3) 중앙 좌표 계산
             float cx = e.Info.Width / 2f;
             float cy = e.Info.Height / 2f;
 
@@ -135,6 +132,12 @@ namespace LogosMap
             canvas.Scale(scale);
             canvas.Translate(-cx, -cy);
             canvas.Translate(translate.X, translate.Y);
+
+            if (newNode && prevNode != null)
+            {
+                canvas.DrawLine(new SKPoint(prevNode.x, prevNode.y), lineEnd, StrokePaint);
+                canvas.DrawCircle(lineEnd.X, lineEnd.Y, 6f, FillPaint);            
+            }
 
             foreach (var node in nodes)
             {
@@ -274,6 +277,9 @@ namespace LogosMap
             }
         }
 
+        public bool newNode;
+        public Node? prevNode;
+
         private void Canvas_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             var position = GetPosition(e.GetPosition(this));
@@ -286,12 +292,16 @@ namespace LogosMap
                 {
                     OpenNodeMenu(clickedNode);
                 }
+                else if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
+                {
+                    if(!selectedNodes.Contains(clickedNode))selectedNodes.Add(clickedNode);
+                    GetAllChildren(clickedNode);
+                }
                 else
                 {
-                    movingNode = AddNewNode(position);
-                    selectedNodes.Clear();
-                    selectedNodes.Add(movingNode);
-                    ConnectNodes(clickedNode, movingNode);
+                    lineEnd = position;
+                    newNode = true;
+                    prevNode = clickedNode;
                 }
                 isEdited = true;
                 mainWindow.Title = !isEdited ? "로고스맵 - " + FileName : "로고스맵 - " + FileName + "*";
@@ -315,11 +325,29 @@ namespace LogosMap
 
         private void Canvas_MouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
-            if (movingNode != null)
-            {
-                ShowEditorBox(movingNode);
+            var position = GetPosition(e.GetPosition(this));
 
-                movingNode = null;
+            if (newNode && prevNode != null)
+            {
+                var nodeAtPosition = GetNodeAtPosition(position);
+                if (nodeAtPosition != null && !prevNode.Equals(nodeAtPosition))
+                {
+                    ConnectNodes(prevNode, nodeAtPosition);
+
+                    prevNode = null;
+                    newNode = false;
+                }
+                else
+                {
+                    var node = AddNewNode(position);
+                    selectedNodes.Clear();
+                    selectedNodes.Add(node);
+                    ConnectNodes(prevNode, node);
+                    ShowEditorBox(node);
+
+                    prevNode = null;
+                    newNode = false;
+                }
             }
         }
 
@@ -327,6 +355,17 @@ namespace LogosMap
         {
             var position = GetPosition(e.GetPosition(this));
 
+            if (newNode && prevNode != null) {
+                var node = GetNodeAtPosition(position);
+                if (node == null)
+                {
+                    lineEnd = position;
+                }
+                else
+                {
+                    lineEnd = new SKPoint(node.x, node.y);
+                }
+            }
             if (movingNode != null)
             {
                 var offset = position - clickPosition;
@@ -631,13 +670,11 @@ namespace LogosMap
                             }
                             break;
                         case MessageBoxResult.No:
-                            // 저장 없이 종료
                             break;
                     }
                 }
                 else
                 {
-                    // 취소 눌렀으면 창 닫기 중단
                     e.Cancel = true;
                 }
             }
@@ -820,6 +857,24 @@ namespace LogosMap
                 && (node.x >= selectionBox.Right)
                 && (node.y < selectionBox.Top)
                 && (node.y >= selectionBox.Bottom);
+            }
+        }
+
+        private void GetAllChildren(Node node)
+        {
+            if (node.GetChildren().Count == 0)
+            {
+                return;
+            }
+
+            foreach (Node child in node.GetChildren())
+            {
+                if (!selectedNodes.Contains(child))
+                {
+                    selectedNodes.Add(child);
+                }
+
+                GetAllChildren(child);
             }
         }
     }
