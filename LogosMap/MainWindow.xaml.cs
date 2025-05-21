@@ -58,7 +58,6 @@ namespace LogosMap
             InitializeComponent();
 
             FileName = Strings.NewFile;
-            mainWindow.Title = Strings.LogosMap;
             FileMenu.Header = "_" + Strings.File;
             NewMenu.Header = "_" + Strings.NewFile;
             SaveMenu.Header = "_" + Strings.Save;
@@ -67,7 +66,7 @@ namespace LogosMap
 
             Instance = this;
 
-            mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+            ResetTitle();
             font.Typeface = Util.GetTypeface("GMARKETSANSTTFLIGHT.TTF");
 
             FillPaint = new SKPaint
@@ -191,6 +190,8 @@ namespace LogosMap
 
         private SKPoint leftClickPos;
 
+        private bool doubleClick;
+
         private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var position = GetPosition(e.GetPosition(this));
@@ -208,27 +209,38 @@ namespace LogosMap
             }
             else if (clickedNode != null)//If clicked on node
             {
-                movingNode = clickedNode;
-
-                if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+                if (e.ClickCount >= 2)
                 {
-                    if (!selectedNodes.Contains(clickedNode))
-                    {
-                        selectedNodes.Clear();
-                        selectedNodes.Add(clickedNode);
-                    }
+                    if (!selectedNodes.Contains(clickedNode)) selectedNodes.Add(clickedNode);
+                    GetAllChildren(clickedNode);
+                    doubleClick = true;
+                    //e.Handled = true; // 필요하다면 이벤트 전파 차단
                 }
                 else
                 {
-                    if (!selectedNodes.Remove(clickedNode))
+                    doubleClick = false;
+                    movingNode = clickedNode;
+
+                    if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
                     {
-                        selectedNodes.Add(clickedNode);
+                        if (!selectedNodes.Contains(clickedNode))
+                        {
+                            selectedNodes.Clear();
+                            selectedNodes.Add(clickedNode);
+                        }
                     }
+                    else
+                    {
+                        if (!selectedNodes.Remove(clickedNode))
+                        {
+                            selectedNodes.Add(clickedNode);
+                        }
+                    }
+
+                    isEdited = true;
+                    ResetTitle();
                 }
-
-                isEdited = true;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                    
                 EndEditing();
             }
             else//If clicked on nothing
@@ -265,7 +277,7 @@ namespace LogosMap
 
             if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
             {
-                if (SKPoint.Distance(position, leftClickPos) < 0.1f)
+                if (SKPoint.Distance(position, leftClickPos) < 0.1f && !doubleClick)
                 {
                     selectedNodes.Clear();
                     if (movingNode != null)
@@ -301,11 +313,6 @@ namespace LogosMap
                 {
                     OpenNodeMenu(clickedNode);
                 }
-                else if ((Keyboard.Modifiers & ModifierKeys.Shift) != 0)
-                {
-                    if(!selectedNodes.Contains(clickedNode))selectedNodes.Add(clickedNode);
-                    GetAllChildren(clickedNode);
-                }
                 else
                 {
                     lineEnd = position;
@@ -313,7 +320,7 @@ namespace LogosMap
                     prevNode = clickedNode;
                 }
                 isEdited = true;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+                ResetTitle();
             }
             else
             {
@@ -474,16 +481,14 @@ namespace LogosMap
                         FileDirectory = filePath;
 
                         isEdited = false;
-                        mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                        ResetTitle();
                         SaveLoad.SaveMindMap(filePath);
                     }
                 }
                 else
                 {
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                    ResetTitle();
                     SaveLoad.SaveMindMap(FileDirectory);
                 }
             }
@@ -504,8 +509,7 @@ namespace LogosMap
                     FileDirectory = filePath;
 
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                    ResetTitle();
                     SaveLoad.SaveMindMap(filePath);
                 }
             }
@@ -517,7 +521,7 @@ namespace LogosMap
                     DeleteNode(node);
                 }
                 isEdited = true;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+                ResetTitle();
             }
         }
 
@@ -558,7 +562,7 @@ namespace LogosMap
                 FileName = saveFileDialog.SafeFileName;
                 FileDirectory = filePath;
                 isEdited = false;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+                ResetTitle();
                 SaveLoad.SaveMindMap(filePath);
             }
         }
@@ -581,16 +585,14 @@ namespace LogosMap
                     FileDirectory = filePath;
 
                     isEdited = false;
-                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                    ResetTitle();
                     SaveLoad.SaveMindMap(filePath);
                 }
             }
             else
             {
                 isEdited = false;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                ResetTitle();
                 SaveLoad.SaveMindMap(FileDirectory);
             }
         }
@@ -609,7 +611,7 @@ namespace LogosMap
                 FileName = openFileDialog.SafeFileName;
                 FileDirectory = filePath;
                 isEdited = false;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+                ResetTitle();
                 selectedNodes.Clear();
                 SaveLoad.LoadMindMap(filePath);
             }
@@ -626,7 +628,7 @@ namespace LogosMap
             {
                 DeleteNode(node);
                 isEdited = true;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
+                ResetTitle();
             };
 
             menu.Items.Add(addNode);
@@ -665,16 +667,14 @@ namespace LogosMap
                                     FileDirectory = filePath;
 
                                     isEdited = false;
-                                    mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                                    ResetTitle();
                                     SaveLoad.SaveMindMap(filePath);
                                 }
                             }
                             else
                             {
                                 isEdited = false;
-                                mainWindow.Title = !isEdited ? Strings.LogosMap + " - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                                ResetTitle();
                                 SaveLoad.SaveMindMap(FileDirectory);
                             }
                             break;
@@ -700,12 +700,11 @@ namespace LogosMap
         {
             if (editingNode != null)
             {
-                editingNode.name = EditorBox.Text != "" ? EditorBox.Text : "노드";
+                editingNode.name = EditorBox.Text != "" ? EditorBox.Text : Strings.Node;
                 EditorBox.Visibility = Visibility.Collapsed;
 
                 isEdited = true;
-                mainWindow.Title = !isEdited ? Strings.LogosMap + "  - " + FileName : Strings.LogosMap + " - " + FileName + "*";
-
+                ResetTitle();
                 editingNode = null;
             }
         }
@@ -885,6 +884,11 @@ namespace LogosMap
 
                 GetAllChildren(child);
             }
+        }
+
+        private void ResetTitle()
+        {
+            mainWindow.Title = !isEdited ? Strings.LogosMap + "  - " + FileName : Strings.LogosMap + " - " + FileName + "*";
         }
     }
 }

@@ -61,7 +61,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   노드 추가과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Add Node과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string AddNode {
             get {
@@ -70,7 +70,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   취소과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Cancel과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string Cancel {
             get {
@@ -79,7 +79,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   노드 삭제과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Delete Node과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string DeleteNode {
             get {
@@ -88,7 +88,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   저장 안함과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Don&apos;t Save과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string DontSave {
             get {
@@ -97,7 +97,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   파일과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   File과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string File {
             get {
@@ -106,7 +106,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   JSON 파일과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   JSON File과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string JsonFile {
             get {
@@ -115,7 +115,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   불러오기과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Load과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string Load {
             get {
@@ -124,7 +124,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   로고스맵과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   LogosMap과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string LogosMap {
             get {
@@ -133,7 +133,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   새 마인드맵과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   New Mindmap과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string NewFile {
             get {
@@ -142,7 +142,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   노드과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Node과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string Node {
             get {
@@ -151,7 +151,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   저장과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Save과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string Save {
             get {
@@ -160,7 +160,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   다른 이름으로 저장과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Save As과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string SaveAs {
             get {
@@ -169,7 +169,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   저장되지 않은 변경 사항이 있습니다. 변경 내용을 저장하시겠습니까?과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Save changes to the mindmap before quitting?과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string SavePrompt {
             get {
