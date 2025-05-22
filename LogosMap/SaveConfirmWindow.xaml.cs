@@ -1,4 +1,5 @@
 ﻿using System.Windows;
+using LogosMap.resources.lang;
 
 namespace LogosMap
 {

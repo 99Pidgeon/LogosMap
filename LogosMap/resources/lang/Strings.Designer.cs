@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace LogosMap {
+namespace LogosMap.resources.lang {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace LogosMap {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("LogosMap.Strings", typeof(Strings).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("LogosMap.resources.lang.Strings", typeof(Strings).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -178,7 +178,7 @@ namespace LogosMap {
         }
         
         /// <summary>
-        ///   알림과(와) 유사한 지역화된 문자열을 찾습니다.
+        ///   Warning과(와) 유사한 지역화된 문자열을 찾습니다.
         /// </summary>
         internal static string Warning {
             get {

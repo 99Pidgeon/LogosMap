@@ -2,11 +2,12 @@
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using System.ComponentModel;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using LogosMap.resources.lang;
+using LogosMap.actions;
 
 namespace LogosMap
 {
@@ -31,11 +32,6 @@ namespace LogosMap
 
         private bool isPanning = false;
 
-        private readonly SKPaint FillPaint;
-        private readonly SKPaint StrokePaint;
-        private readonly SKPaint EditorPaint;
-        private readonly SKPaint SelectedPaint;
-
         public string FileName = Strings.NewFile;
         public string FileDirectory = "";
 
@@ -53,10 +49,21 @@ namespace LogosMap
 
         private SKPoint lineEnd;
 
+        public List<Actions> actions = [];
+
+        private int actionPointer;
+
+        private readonly List<Node> selectionBoxNodes = [];
+
+        private SKPoint leftClickPos;
+
+        private bool doubleClick;
+
         public MainWindow()
         {
             InitializeComponent();
 
+            //Initialize Localized Strings
             FileName = Strings.NewFile;
             FileMenu.Header = "_" + Strings.File;
             NewMenu.Header = "_" + Strings.NewFile;
@@ -69,41 +76,12 @@ namespace LogosMap
             ResetTitle();
             font.Typeface = Util.GetTypeface("GMARKETSANSTTFLIGHT.TTF");
 
-            FillPaint = new SKPaint
-            {
-                Color = SKColors.White,
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true,
-            };
-
-            StrokePaint = new SKPaint
-            {
-                Color = SKColor.Parse("#4FFFFFFF"),
-                StrokeWidth = 0.6f,
-                Style = SKPaintStyle.Stroke,
-                IsAntialias = true
-            };
-
-            EditorPaint = new SKPaint
-            {
-                Color = SKColor.FromHsl(255, 255, 255),
-                Style = SKPaintStyle.Fill,
-                IsAntialias = true
-            };
-
-            SelectedPaint = new SKPaint
-            {
-                Color = SKColors.DarkOrange,
-                StrokeWidth = 2,
-                Style = SKPaintStyle.Stroke,
-                IsAntialias = true
-            };
-
             CompositionTarget.Rendering += OnRendering;
 
             AddNewNode(new SKPoint(400, 250));
         }
 
+        #region Rendering
         private void OnRendering(object? sender, EventArgs e)
         {
             var args = (RenderingEventArgs)e;
@@ -143,15 +121,15 @@ namespace LogosMap
 
             if (newNode && prevNode != null)
             {
-                canvas.DrawLine(new SKPoint(prevNode.x, prevNode.y), lineEnd, StrokePaint);
-                canvas.DrawCircle(lineEnd.X, lineEnd.Y, 6f, FillPaint);            
+                canvas.DrawLine(new SKPoint(prevNode.x, prevNode.y), lineEnd, Util.TransparentPaint);
+                canvas.DrawCircle(lineEnd.X, lineEnd.Y, 6f, Util.WhitePaint);            
             }
 
             foreach (var node in nodes)
             {
                 foreach (Connection connection in node.connections)
                 {
-                    canvas.DrawLine(new SKPoint(connection.startNode.x, connection.startNode.y), new SKPoint(connection.endNode.x, connection.endNode.y), StrokePaint);
+                    canvas.DrawLine(new SKPoint(connection.startNode.x, connection.startNode.y), new SKPoint(connection.endNode.x, connection.endNode.y), Util.TransparentPaint);
                 }
             }
             foreach (var node in nodes)
@@ -166,32 +144,26 @@ namespace LogosMap
                 if (!bounds.IntersectsWith(nodeRect)) continue;
 
 
-                canvas.DrawCircle(node.x, node.y, 6f, FillPaint);
+                canvas.DrawCircle(node.x, node.y, 6f, Util.WhitePaint);
                 if (selectedNodes.Contains(node) || selectionBoxNodes.Contains(node))
                 {
-                    canvas.DrawCircle(node.x, node.y, 6.2f, SelectedPaint);
+                    canvas.DrawCircle(node.x, node.y, 6.2f, Util.DarkOrangePaint);
                 }
-                canvas.DrawText(node.name, new SKPoint(node.x, node.y + 20), SKTextAlign.Center, font, FillPaint);
+                canvas.DrawText(node.name, new SKPoint(node.x, node.y + 20), SKTextAlign.Center, font, Util.WhitePaint);
             }
 
             if (MathF.Abs(selectionBox.Width) > 0.1f || MathF.Abs(selectionBox.Height) > 0.1f)
             {
-                canvas.DrawRect(selectionBox.Left, selectionBox.Top, selectionBox.Width, selectionBox.Height, StrokePaint);
+                canvas.DrawRect(selectionBox.Left, selectionBox.Top, selectionBox.Width, selectionBox.Height, Util.TransparentPaint);
             }
 
             canvas.GetLocalClipBounds(out bounds);
 
             canvas.Restore();
         }
+        #endregion
 
         #region Mouse Events
-
-        private List<Node> selectionBoxNodes = [];
-
-        private SKPoint leftClickPos;
-
-        private bool doubleClick;
-
         private void Canvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var position = GetPosition(e.GetPosition(this));
@@ -214,7 +186,6 @@ namespace LogosMap
                     if (!selectedNodes.Contains(clickedNode)) selectedNodes.Add(clickedNode);
                     GetAllChildren(clickedNode);
                     doubleClick = true;
-                    //e.Handled = true; // 필요하다면 이벤트 전파 차단
                 }
                 else
                 {
@@ -265,6 +236,21 @@ namespace LogosMap
         private void Canvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var position = GetPosition(e.GetPosition(this));
+
+            if (selectedNodes.Count > 0 && SKPoint.Distance(position, leftClickPos) > 0.1f)
+            {
+                Actions tempActions = [];
+
+                foreach (Node node in selectedNodes)
+                {
+                    tempActions.Add(new MoveAction(node, new SKPoint(node.x, node.y) - (position - leftClickPos), new SKPoint(node.x, node.y)));
+                }
+
+                if (tempActions.Count > 0)
+                {
+                    AddAction(tempActions);
+                }
+            }
 
             foreach (Node node in selectionBoxNodes)
             {
@@ -463,27 +449,12 @@ namespace LogosMap
         #region Key Events
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            //Save
             if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
             {
                 if (FileDirectory == null || FileDirectory == "")
                 {
-                    var saveFileDialog = new SaveFileDialog
-                    {
-                        Title = Strings.Save + "...",
-                        Filter = Strings.JsonFile + " (*.json)|*.json",
-                        FileName = Strings.NewFile + ".json"
-                    };
-
-                    if (saveFileDialog.ShowDialog() == true)
-                    {
-                        string filePath = saveFileDialog.FileName;
-                        FileName = saveFileDialog.SafeFileName;
-                        FileDirectory = filePath;
-
-                        isEdited = false;
-                        ResetTitle();
-                        SaveLoad.SaveMindMap(filePath);
-                    }
+                    SaveFile();
                 }
                 else
                 {
@@ -493,35 +464,51 @@ namespace LogosMap
                 }
             }
 
+            //Save As
             if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) != 0 && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
             {
-                var saveFileDialog = new SaveFileDialog
-                {
-                    Title = Strings.SaveAs + "...",
-                    Filter = Strings.JsonFile + " (*.json)|*.json",
-                    FileName = FileName
-                };
-
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    string filePath = saveFileDialog.FileName;
-                    FileName = saveFileDialog.SafeFileName;
-                    FileDirectory = filePath;
-
-                    isEdited = false;
-                    ResetTitle();
-                    SaveLoad.SaveMindMap(filePath);
-                }
+                SaveAsFile();
             }
 
+            //Delete Node
             if (e.Key == Key.Delete)
             {
+                Actions tempActions = [];
                 foreach(Node node in selectedNodes)
                 {
+                    tempActions.Add(new DeleteAction(node));
                     DeleteNode(node);
+                }
+                if(tempActions.Count > 0)
+                {
+                    AddAction(tempActions);
                 }
                 isEdited = true;
                 ResetTitle();
+            }
+
+            //Undo
+            if (e.Key == Key.Z && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            {
+                if(actionPointer > 0)
+                {
+                    actions[actionPointer - 1].Undo();
+                    actionPointer = Math.Max(0, actionPointer - 1);
+                    isEdited = true;
+                    ResetTitle();
+                }
+            }
+
+            //Redo
+            if (e.Key == Key.Y && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            {
+                if (actionPointer < actions.Count)
+                {
+                    actions[actionPointer].Redo();
+                    actionPointer = Math.Min(actions.Count, actionPointer + 1);
+                    isEdited = true;
+                    ResetTitle();
+                }
             }
         }
 
@@ -532,11 +519,17 @@ namespace LogosMap
         #endregion
 
         #region UI Events
+        //Create New File
         private void NewButton_Click(object sender, RoutedEventArgs e)
         {
             nodes.Clear();
             nodeIds.Clear();
             lastId = 0;
+
+            actions.Clear();
+            actionPointer = 0;
+
+            selectedNodes.Clear();
 
             FileDirectory = "";
             FileName = Strings.NewFile;
@@ -549,45 +542,14 @@ namespace LogosMap
 
         private void SaveAsButton_Click(object sender, RoutedEventArgs e)
         {
-            var saveFileDialog = new SaveFileDialog
-            {
-                Title = Strings.SaveAs + "...",
-                Filter = Strings.JsonFile + " (*.json)|*.json",
-                FileName = FileName
-            };
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                string filePath = saveFileDialog.FileName;
-                FileName = saveFileDialog.SafeFileName;
-                FileDirectory = filePath;
-                isEdited = false;
-                ResetTitle();
-                SaveLoad.SaveMindMap(filePath);
-            }
+            SaveAsFile();
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             if (FileDirectory == null || FileDirectory == "")
             {
-                var saveFileDialog = new SaveFileDialog
-                {
-                    Title = Strings.Save + "...",
-                    Filter = Strings.JsonFile + " (*.json)|*.json",
-                    FileName = Strings.NewFile + ".json"
-                };
-
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    string filePath = saveFileDialog.FileName;
-                    FileName = saveFileDialog.SafeFileName;
-                    FileDirectory = filePath;
-
-                    isEdited = false;
-                    ResetTitle();
-                    SaveLoad.SaveMindMap(filePath);
-                }
+                SaveFile();
             }
             else
             {
@@ -599,22 +561,7 @@ namespace LogosMap
 
         private void LoadButton_Click(object sender, RoutedEventArgs e)
         {
-            var openFileDialog = new OpenFileDialog
-            {
-                Title = Strings.Load + "...",
-                Filter = Strings.JsonFile + " (*.json)|*.json"
-            };
-
-            if (openFileDialog.ShowDialog() == true)
-            {
-                string filePath = openFileDialog.FileName;
-                FileName = openFileDialog.SafeFileName;
-                FileDirectory = filePath;
-                isEdited = false;
-                ResetTitle();
-                selectedNodes.Clear();
-                SaveLoad.LoadMindMap(filePath);
-            }
+            LoadFile();
 
             translate = new SKPoint(0, 0);
         }
@@ -626,6 +573,7 @@ namespace LogosMap
             var addNode = new MenuItem { Header = "_" + Strings.DeleteNode };
             addNode.Click += (s, args) =>
             {
+                AddAction([new DeleteAction(node)]);
                 DeleteNode(node);
                 isEdited = true;
                 ResetTitle();
@@ -636,6 +584,7 @@ namespace LogosMap
             menu.IsOpen = true;
         }
 
+        //Show Warning On Window Close
         private void Window_Closing(object? sender, CancelEventArgs e)
         {
             if (isEdited)
@@ -653,23 +602,7 @@ namespace LogosMap
                         case MessageBoxResult.Yes:
                             if (FileDirectory == null || FileDirectory == "")
                             {
-                                var saveFileDialog = new SaveFileDialog
-                                {
-                                    Title = Strings.Save + "...",
-                                    Filter = "JSON 파일 (*.json)|*.json",
-                                    FileName = Strings.NewFile + ".json"
-                                };
-
-                                if (saveFileDialog.ShowDialog() == true)
-                                {
-                                    string filePath = saveFileDialog.FileName;
-                                    FileName = saveFileDialog.SafeFileName;
-                                    FileDirectory = filePath;
-
-                                    isEdited = false;
-                                    ResetTitle();
-                                    SaveLoad.SaveMindMap(filePath);
-                                }
+                                SaveFile();
                             }
                             else
                             {
@@ -693,11 +626,13 @@ namespace LogosMap
         #region Editor Box Events
         private void EditorBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, EditorPaint) + 10);
+            //Change Editor Box Width Depending on Text Length
+            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, Util.WhitePaint) + 10);
         }
 
         private void EndEditing()
         {
+            //Change Node Name According to Editor Box Text
             if (editingNode != null)
             {
                 editingNode.name = EditorBox.Text != "" ? EditorBox.Text : Strings.Node;
@@ -728,7 +663,7 @@ namespace LogosMap
             EditorBox.BorderThickness = new Thickness(0);
             EditorBox.TextAlignment = TextAlignment.Center;
             EditorBox.Visibility = Visibility.Visible;
-            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, EditorPaint) + 10);
+            EditorBox.Width = MathF.Max(50, font.MeasureText(EditorBox.Text, Util.WhitePaint) + 10);
             EditorBox.Height = 20;
 
             EditorBox.Focus();
@@ -736,6 +671,7 @@ namespace LogosMap
         }
         #endregion
 
+        //Check If Node Name is at a Position 
         private Node? GetTextAtPosition(SKPoint position)
         {
             foreach (Node node in nodes)
@@ -750,6 +686,7 @@ namespace LogosMap
             return null;
         }
 
+        //Check If Node is at Position
         private static Node? GetNodeAtPosition(SKPoint position)
         {
             foreach (Node node in nodes)
@@ -772,7 +709,7 @@ namespace LogosMap
             node1.startConnections.Add(connection);
         }
 
-        private Node AddNewNode(SKPoint position)
+        public Node AddNewNode(SKPoint position)
         {
             Node node = new(lastId, position.X, position.Y);
 
@@ -782,10 +719,37 @@ namespace LogosMap
 
             lastId++;
 
+            AddAction(new Actions { new AddAction(node) });
+
             return node;
         }
 
-        private void DeleteNode(Node node)
+        public Node AddNode(Node node)
+        {
+            nodeIds.Add(node.Id, node);
+
+            nodes.Add(node);
+
+            foreach(Connection connection in node.startConnections)
+            {
+                if (nodeIds.ContainsKey(connection.endNode.Id))
+                {
+                    connection.endNode.connections.Add(connection);
+                }
+            }
+
+            foreach (Connection connection in node.connections)
+            {
+                if (nodeIds.ContainsKey(connection.startNode.Id))
+                {
+                    connection.startNode.startConnections.Add(connection);
+                }
+            }
+
+            return node;
+        }
+
+        public void DeleteNode(Node node)
         {
             editingNode = null;
             movingNode = null;
@@ -802,6 +766,7 @@ namespace LogosMap
             nodes.Remove(node);
         }
 
+        //Convert Screen Position to World Position
         private SKPoint GetPosition(Point position)
         {
             float xMultiplier = (float)(position.X / skCanvas.ActualWidth);
@@ -813,6 +778,7 @@ namespace LogosMap
             return new SKPoint(bounds.Left + XPos, bounds.Top + YPos);
         }
 
+        //Get Screen Position from World Position
         private Point GetScreenPosition(SKPoint position)
         {
             float xMultiplier = (float)((position.X - bounds.Left) / (bounds.Right - bounds.Left));
@@ -883,6 +849,88 @@ namespace LogosMap
                 }
 
                 GetAllChildren(child);
+            }
+        }
+
+        private void AddAction(Actions action)
+        {
+            if (actions.Count > 1)
+            {
+                if (actionPointer < actions.Count)
+                {
+                    actions.RemoveRange(actionPointer, actions.Count - actionPointer);
+                }
+            }
+
+            if (actionPointer > actions.Count)
+            {
+                actionPointer = actions.Count;
+            }
+            
+            actions.Add(action);
+            actionPointer++;
+        }
+
+        public void SaveFile()
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = Strings.Save + "...",
+                Filter = Strings.JsonFile + " (*.json)|*.json",
+                FileName = Strings.NewFile + ".json"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                string filePath = saveFileDialog.FileName;
+                FileName = saveFileDialog.SafeFileName;
+                FileDirectory = filePath;
+
+                isEdited = false;
+                ResetTitle();
+                SaveLoad.SaveMindMap(filePath);
+            }
+        }
+
+        public void SaveAsFile()
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = Strings.SaveAs + "...",
+                Filter = Strings.JsonFile + " (*.json)|*.json",
+                FileName = FileName
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                string filePath = saveFileDialog.FileName;
+                FileName = saveFileDialog.SafeFileName;
+                FileDirectory = filePath;
+                isEdited = false;
+                ResetTitle();
+                SaveLoad.SaveMindMap(filePath);
+            }
+        }
+
+        public void LoadFile()
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                Title = Strings.Load + "...",
+                Filter = Strings.JsonFile + " (*.json)|*.json"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                string filePath = openFileDialog.FileName;
+                FileName = openFileDialog.SafeFileName;
+                FileDirectory = filePath;
+                isEdited = false;
+                ResetTitle();
+                selectedNodes.Clear();
+                actions.Clear();
+                actionPointer = 0;
+                SaveLoad.LoadMindMap(filePath);
             }
         }
 

@@ -157,6 +157,6 @@
     <value>Save changes to the mindmap before quitting?</value>
   </data>
   <data name="Warning" xml:space="preserve">
-    <value>알림</value>
+    <value>Warning</value>
   </data>
 </root>

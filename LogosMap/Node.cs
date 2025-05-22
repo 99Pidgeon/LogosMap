@@ -1,4 +1,7 @@
-﻿namespace LogosMap
+﻿using LogosMap.resources.lang;
+using SkiaSharp;
+
+namespace LogosMap
 {
     public class Node : IEquatable<Node>
     {
@@ -6,6 +9,7 @@
         public string name = Strings.Node;
         public List<Connection> connections = [];
         public List<Connection> startConnections = [];
+        public SKPoint fromPos;
         public float x;
         public float y;
 

@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Fonts\GMARKETSANSTTFLIGHT.TTF" />
+    <None Remove="resources\fonts\GMARKETSANSTTFLIGHT.TTF" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,10 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Fonts\GMARKETSANSTTFLIGHT_R.TTF">
+    <Resource Include="resources\fonts\GMARKETSANSTTFLIGHT_R.TTF">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
-    <EmbeddedResource Include="Fonts\GMARKETSANSTTFLIGHT.TTF" />
+    <EmbeddedResource Include="resources\fonts\GMARKETSANSTTFLIGHT.TTF" />
   </ItemGroup>
 
   <ItemGroup>
@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Strings.Designer.cs">
+    <Compile Update="resources\lang\Strings.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>Strings.resx</DependentUpon>
@@ -45,7 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Strings.resx">
+    <EmbeddedResource Update="resources\lang\Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
     </EmbeddedResource>
