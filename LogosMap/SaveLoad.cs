@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 
 namespace LogosMap
 {
@@ -50,6 +52,15 @@ namespace LogosMap
                 StartNodeId = connection.startNode.Id,
                 EndNodeId = connection.endNode.Id
             };
+        }
+
+        public static void ExportNames(string path)
+        {
+            var dataList = MainWindow.nodes.Select(c => ConvertToData(c).Name).ToList();
+            File.WriteAllLines(path, dataList);
+
+            //var json = JsonSerializer.Serialize(dataList, new JsonSerializerOptions { Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.HangulJamo, UnicodeRanges.HangulSyllables), WriteIndented = true });
+            //File.WriteAllText(path, json);
         }
 
         public static void SaveMindMap(string path)

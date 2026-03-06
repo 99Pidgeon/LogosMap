@@ -464,6 +464,24 @@ namespace LogosMap
                 }
             }
 
+            if (e.Key == Key.E && (Keyboard.Modifiers & ModifierKeys.Control) != 0)
+            {
+                var saveFileDialog = new SaveFileDialog
+                {
+                    Title = Strings.SaveAs + "...",
+                    Filter = "텍스트 파일 (*.txt)|*.txt",
+                    FileName = FileName
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    string filePath = saveFileDialog.FileName;
+                    FileName = saveFileDialog.SafeFileName;
+                    FileDirectory = filePath;
+                    SaveLoad.ExportNames(filePath);
+                }
+            }
+
             //Save As
             if (e.Key == Key.S && (Keyboard.Modifiers & ModifierKeys.Control) != 0 && (Keyboard.Modifiers & ModifierKeys.Shift) != 0)
             {
